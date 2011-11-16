@@ -1,0 +1,70 @@
+
+Xen Enterprise tools
+====================
+
+This is a collection of short utility scripts written to perform 
+simple management tasks on a Xen Enterprise environment.
+
+I will try to make them as reusable as possible, but in this
+particular instance "practicality beats purity" - these are the tools
+to get the job done, and are not designed to become an over-generalised,
+over-abstracted and over-engineered monster.
+
+More detailed discussions of what these tools do and how they operate
+can be found on http://www.sysadminpy.com/
+
+WARNING: It's already mentioned in the license, but I want to re-iterate:
+                 USE THESE TOOLS AT YOUR OWN RISK!
+Before using on a production environment, make sure you understand how they work,
+what they do, and most importantly - test them somewhere else first!
+
+
+move_vm_to_sr.py
+----------------
+
+Options:
+  -v VM        Name of the VM to move
+  -x XEN_HOST  Name of a Xen host (does not need to be the pool master).
+  -s SR        Destination SR name
+
+This tool moves a VM between two Storage Repositories (SRs). Useful when you
+upgrading your storage devices and want to move all VMs without rebuilding
+from one to another.
+
+Here's how it works:
+
+- If a VM is running it shuts it down
+- Figures out the attached VBD (Virtual Block Device - disk that VM is using)
+- Given VBD finds out its VDI (Virtual Disk Image - disk representation 
+  on the actual storage device)
+- Finds out what SR this VDI belongs to
+- If current SR and destination SR matches - do nothing (in contrary to what
+  Citrix Xen Center would do)
+- Copy VDI to the new SR
+- Destroy old VBD and old VDI
+- Create new VBD linking it to the VM and the new VDI
+- If the VM was running, start it
+
+Configuration:
+
+You can define default username and password as global variables in the script.
+If these are not set, the script will ask you to provide them.
+
+Caveats:
+
+It will do a hard (forced) VM shutdown to save some time (copying VDI is already
+a time consuming business, so we don't want to wait on random applications not
+shutting down gracefully). This may cause data loss in some situations, so shut
+down the applications beforehand.
+
+Tips:
+
+A simple shell script that loops through all VMs listed in a text file:
+
+for vm in $(cat virtual_machines.txt)
+do
+    ./move_vm_to_sr.py -x 192.168.0.1 -s my_new_storage -v ${vm}
+done
+
+
+

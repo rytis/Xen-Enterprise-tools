@@ -1,4 +1,3 @@
-
 Xen Enterprise tools
 ====================
 
@@ -66,5 +65,32 @@ do
     ./move_vm_to_sr.py -x 192.168.0.1 -s my_new_storage -v ${vm}
 done
 
+xen_users.py
+------------
 
+Options:
+  -x XEN_HOST      Reference Xen host
+  -d DST_XEN_HOST  Target Xen host
+  -m               Minimal output
 
+This tool allows you to manage users (or subjects as Xen calls them).
+Primarily it was written to replicate all configured users from one
+Xen host to another.
+
+All user roles are preserved during the copy operation.
+
+It can also list existing users.
+
+Examples:
+
+Listing all users registered on a Xen host:
+
+./xen_users.py list -x 192.168.0.1
+
+Copying all users from one host to another:
+
+./xen_users.py copy -x 192.168.0.1 -d 192.168.0.2
+
+Synchronising all users between two hosts (first copy A to B, then B to A):
+
+./xen_users.py merge -x 192.168.0.1 -d 192.168.0.2

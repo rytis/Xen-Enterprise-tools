@@ -56,6 +56,15 @@ class XenClient:
             logging.debug("Found matching role: %s (%s). Adding to it..." % (role_ref, role_name))
             self.xen_session.xenapi.subject.add_to_roles(user_ref, role_ref)
 
+    def get_available_roles(self):
+        available_roles = self.get_role_names(self.xen_session.xenapi.role.get_all())
+        return available_roles
+
+    def add_user(self, username, roles):
+        pass
+
+
+
 
 def clone_xen_users(src_x, dst_x, operation='copy'):
     logging.debug("Clonning all users from %s to %s. Clone operation: %s" % (src_x, dst_x, operation))
@@ -78,7 +87,7 @@ def main():
     logging.basicConfig(format='[%(asctime)s] %(message)s', level=LOG_LEVEL)
     parser = OptionParser()
     parser.add_option('-x', dest='xen_host', help='Name of a reference Xen host')
-    parser.add_option('-d', dest='dst_xen_host', help='Name of a target Xen host')
+    parser.add_option('-d', dest='dst_xen_host', help='Name of a target Xen host (or a comma separated list of multiple hosts)')
     parser.add_option('-m', dest='minimal', action='store_true', default=False, help='Minimal output')
     (options, args) = parser.parse_args()
     if not (options.xen_host and args):
@@ -111,10 +120,12 @@ def main():
         if not options.dst_xen_host:
             print "ERROR: Need to specify a destination Xen host"
             sys.exit(-1)
-        dst_x = XenClient(username, password, "https://%s" % options.dst_xen_host)
-        clone_xen_users(x, dst_x)
-        if args[0] == 'merge':
-            clone_xen_users(dst_x, x)
+        xen_hosts = [h.strip() for h in options.dst_xen_host.split(',')]
+        for dst_host in xen_hosts:
+            dst_x = XenClient(username, password, "https://%s" % dst_host)
+            clone_xen_users(x, dst_x)
+            if args[0] == 'merge':
+                clone_xen_users(dst_x, x)
     else:
         print "ERROR: Unknown command"
 

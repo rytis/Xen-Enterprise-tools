@@ -107,7 +107,7 @@ def main():
             else:
                 print '-' * 79
                 print "%s" % pprint.pformat(user_record)
-    elif args[0] == 'copy' or args[0] == 'merge':
+    elif args[0] in ['copy', 'merge']:
         if not options.dst_xen_host:
             print "ERROR: Need to specify a destination Xen host"
             sys.exit(-1)

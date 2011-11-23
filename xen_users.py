@@ -16,6 +16,7 @@ from optparse import OptionParser
 #USERNAME=''
 #PASSWORD=''
 LOG_LEVEL=logging.DEBUG
+DEFAULT_ROLE='vm-power-admin'
 #
 ### end config
 
@@ -57,13 +58,15 @@ class XenClient:
             self.xen_session.xenapi.subject.add_to_roles(user_ref, role_ref)
 
     def get_available_roles(self):
-        available_roles = self.get_role_names(self.xen_session.xenapi.role.get_all())
-        return available_roles
+        #available_roles = self.get_role_names(self.xen_session.xenapi.role.get_all())
+        available_roles = []
+        for role_ref in self.xen_session.xenapi.role.get_all():
+            if len(self.xen_session.xenapi.role.get_subroles(role_ref)):
+                available_roles.append(role_ref)
+        return self.get_role_names(available_roles)
 
     def add_user(self, username, roles):
         pass
-
-
 
 
 def clone_xen_users(src_x, dst_x, operation='copy'):
@@ -126,6 +129,14 @@ def main():
             clone_xen_users(x, dst_x)
             if args[0] == 'merge':
                 clone_xen_users(dst_x, x)
+    elif args[0] == 'roles':
+        print "Available roles:"
+        for role in x.get_available_roles():
+            print "    %s" % role,
+            if role == DEFAULT_ROLE:
+                print " [default]"
+            else:
+                print
     else:
         print "ERROR: Unknown command"
 

@@ -69,8 +69,14 @@ xen_users.py
 ------------
 
 Options:
-  -x XEN_HOST      Reference Xen host
-  -d DST_XEN_HOST  Target Xen host
+Options:
+  -h, --help       show this help message and exit
+  -x XEN_HOST      Name of a reference Xen host
+  -d DST_XEN_HOST  Name of a target Xen host (or a comma separated list of
+                   multiple hosts)
+  -u USERNAME      Username of the user you wish to add
+  -r ROLES         List of roles a new user should be assigned to. Defaults
+                   to: vm-power-admin if empty.
   -m               Minimal output
 
 This tool allows you to manage users (or subjects as Xen calls them).
@@ -84,13 +90,16 @@ It can also list existing users.
 Examples:
 
 Listing all users registered on a Xen host:
-
 ./xen_users.py list -x 192.168.0.1
 
 Copying all users from one host to another:
-
 ./xen_users.py copy -x 192.168.0.1 -d 192.168.0.2
 
 Synchronising all users between two hosts (first copy A to B, then B to A):
-
 ./xen_users.py merge -x 192.168.0.1 -d 192.168.0.2
+
+Adding new user:
+./xen_users.py add -x 192.168.0.1 -u "DOMAIN\username" -r 'pool-admin'
+
+Removing user:
+./xen_users.py remove -x 192.168.0.1 -u "DOMAIN\username"

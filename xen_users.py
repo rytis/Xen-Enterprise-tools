@@ -66,7 +66,42 @@ class XenClient:
         return self.get_role_names(available_roles)
 
     def add_user(self, username, roles):
-        pass
+        logging.debug("Searching for user %s in the external directory service..." % username)
+        try:
+            subj_id = self.xen_session.xenapi.auth.get_subject_identifier(username)
+        except XenAPI.Failure:
+            logging.debug("Cannot find the specified user")
+            return False
+        logging.debug("Found one with subject ID: %s. Retrieving user details..." % subj_id)
+        user_record = self.xen_session.xenapi.auth.get_subject_information_from_identifier(subj_id)
+        logging.debug("User record:\n\n%s" % pprint.pformat(user_record))
+        existing_sids = [r['subject_identifier'] for r in self.get_all_users().values()]
+        logging.debug("Existing SIDs: %s" % existing_sids)
+        if subj_id in existing_sids:
+            logging.debug("User already exists")
+            return False
+        self.create_user({'other_config': user_record, 'subject_identifier': subj_id}, roles)
+        return True
+
+    def delete_user(self, username):
+        logging.debug("Searching for user %s in the external directory service..." % username)
+        try:
+            subj_id = self.xen_session.xenapi.auth.get_subject_identifier(username)
+        except XenAPI.Failure:
+            logging.debug("Cannot find the specified user in the external directory")
+            return False
+        logging.debug("Found one with subject ID: %s" % subj_id)
+        deleted = False
+        for subj_ref, record in self.xen_session.xenapi.subject.get_all_records().iteritems():
+            if subj_id == record['subject_identifier']:
+                self.xen_session.xenapi.subject.destroy(subj_ref)
+                deleted = True
+        if deleted:
+            logging.debug("Successfully deleted the user")
+        else:
+            logging.debug("Could not delete the user - perhaps it was not on the Xen host")
+        return deleted
+
 
 
 def clone_xen_users(src_x, dst_x, operation='copy'):
@@ -91,6 +126,8 @@ def main():
     parser = OptionParser()
     parser.add_option('-x', dest='xen_host', help='Name of a reference Xen host')
     parser.add_option('-d', dest='dst_xen_host', help='Name of a target Xen host (or a comma separated list of multiple hosts)')
+    parser.add_option('-u', dest='username', help='Username of the user you wish to add')
+    parser.add_option('-r', dest='roles', help="List of roles a new user should be assigned to. Defaults to: %s if empty." % DEFAULT_ROLE)
     parser.add_option('-m', dest='minimal', action='store_true', default=False, help='Minimal output')
     (options, args) = parser.parse_args()
     if not (options.xen_host and args):
@@ -137,6 +174,19 @@ def main():
                 print " [default]"
             else:
                 print
+    elif args[0] == 'add':
+        if not options.username:
+            print "ERROR: You must specify a username"
+            sys.exit(-1)
+        roles_list = [DEFAULT_ROLE]
+        if options.roles:
+            roles_list = [r.strip() for r in options.roles.split(',')]
+        x.add_user(options.username, roles_list)
+    elif args[0] == 'remove':
+        if not options.username:
+            print "ERROR: You must specify a username"
+            sys.exit(-1)
+        x.delete_user(options.username)
     else:
         print "ERROR: Unknown command"
 

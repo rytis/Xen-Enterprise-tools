@@ -123,7 +123,16 @@ def clone_xen_users(src_x, dst_x, operation='copy'):
 
 def main():
     logging.basicConfig(format='[%(asctime)s] %(message)s', level=LOG_LEVEL)
-    parser = OptionParser()
+    usage = """Usage: %prog <command> [options]
+
+Commands:
+  list   - list all users
+  copy   - copy users from the reference Xen host to one or more  target Xen hosts
+  merge  - merges users by first copying all users from the reference host to the target and then other way round
+  roles  - list all available user roles
+  add    - add new user to the Xen host
+  remove - remove a user from the Xen host"""
+    parser = OptionParser(usage=usage)
     parser.add_option('-x', dest='xen_host', help='Name of a reference Xen host')
     parser.add_option('-d', dest='dst_xen_host', help='Name of a target Xen host (or a comma separated list of multiple hosts)')
     parser.add_option('-u', dest='username', help='Username of the user you wish to add')
